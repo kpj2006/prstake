@@ -27,7 +27,7 @@ export async function GET(_request, { params }) {
       .maybeSingle();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ eligible: false, wallet: null, reason: error.message });
     }
 
     if (!data?.wallet_address) {

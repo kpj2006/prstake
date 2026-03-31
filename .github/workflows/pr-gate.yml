@@ -1,0 +1,119 @@
+name: PR Gate
+
+on:
+  pull_request:
+    types: [opened, closed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install ethers
+        run: npm install --no-save ethers@6
+
+      - name: Check contributor binding
+        id: check
+        env:
+          DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -e
+          URL="$DASHBOARD_URL/api/check/$AUTHOR"
+          RESP=$(curl -sSf "$URL")
+          echo "response=$RESP" >> $GITHUB_OUTPUT
+          ELIGIBLE=$(echo "$RESP" | jq -r '.eligible')
+          WALLET=$(echo "$RESP" | jq -r '.wallet // ""')
+          echo "eligible=$ELIGIBLE" >> $GITHUB_OUTPUT
+          echo "wallet=$WALLET" >> $GITHUB_OUTPUT
+
+      - name: Handle opened PR not eligible
+        if: github.event.action == 'opened' && steps.check.outputs.eligible != 'true'
+        uses: actions/github-script@v7
+        env:
+          DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const body = `❌ Deposit required at ${process.env.DASHBOARD_URL}`;
+
+            await github.rest.issues.createComment({ owner, repo, issue_number: pull_number, body });
+            await github.rest.pulls.update({ owner, repo, pull_number, state: 'closed' });
+
+      - name: On opened call onPROpen
+        if: github.event.action == 'opened' && steps.check.outputs.eligible == 'true'
+        id: on_open
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          VAULT_ADDRESS: ${{ vars.VAULT_ADDRESS }}
+          WALLET: ${{ steps.check.outputs.wallet }}
+        run: |
+          node -e "
+          const { ethers } = require('ethers');
+          (async () => {
+            const abi = [
+              'function onPROpen(address wallet)',
+              'function openPRCount(address wallet) view returns (uint256)'
+            ];
+            const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+            const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+            const vault = new ethers.Contract(process.env.VAULT_ADDRESS, abi, signer);
+            const tx = await vault.onPROpen(process.env.WALLET);
+            await tx.wait();
+            const count = await vault.openPRCount(process.env.WALLET);
+            require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `count=${count.toString()}\n`);
+          })().catch((e) => { console.error(e); process.exit(1); });
+          "
+
+      - name: Comment slot usage
+        if: github.event.action == 'opened' && steps.check.outputs.eligible == 'true'
+        uses: actions/github-script@v7
+        env:
+          COUNT: ${{ steps.on_open.outputs.count }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const body = `✅ Slot used (${process.env.COUNT}/10)`;
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+      - name: On closed call onPRClose
+        if: github.event.action == 'closed' && steps.check.outputs.wallet != ''
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          VAULT_ADDRESS: ${{ vars.VAULT_ADDRESS }}
+          WALLET: ${{ steps.check.outputs.wallet }}
+        run: |
+          node -e "
+          const { ethers } = require('ethers');
+          (async () => {
+            const abi = [
+              'function onPRClose(address wallet)',
+              'function openPRCount(address wallet) view returns (uint256)'
+            ];
+            const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+            const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+            const vault = new ethers.Contract(process.env.VAULT_ADDRESS, abi, signer);
+            const count = await vault.openPRCount(process.env.WALLET);
+            if (count > 0n) {
+              const tx = await vault.onPRClose(process.env.WALLET);
+              await tx.wait();
+            }
+          })().catch((e) => { console.error(e); process.exit(1); });
+          "

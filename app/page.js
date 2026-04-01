@@ -17,10 +17,11 @@ export default function HomePage() {
   const [switchingChain, setSwitchingChain] = useState(false);
   const [signing, setSigning] = useState(false);
   const [txPending, setTxPending] = useState(false);
-  const [depositAmount, setDepositAmount] = useState("0.01");
+  const [depositAmount, setDepositAmount] = useState("0.000001");
   const [boundWallet, setBoundWallet] = useState(null);
   const [openCount, setOpenCount] = useState(0n);
   const [depositRaw, setDepositRaw] = useState(0n);
+  const [bindError, setBindError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
 
@@ -216,6 +217,7 @@ export default function HomePage() {
   async function handleBind() {
     console.log("[BIND] Starting bind process...");
     setError("");
+    setBindError("");
     setFeedback("");
 
     if (!isConnected || !address) {
@@ -253,7 +255,9 @@ export default function HomePage() {
       console.log("[BIND] Response body:", body);
       if (!res.ok) {
         console.error("[BIND] Request failed");
-        setError(body.error || "Failed to bind wallet.");
+        const msg = body.error || "Failed to bind wallet.";
+        setError(msg);
+        setBindError(msg);
         return;
       }
 
@@ -262,7 +266,9 @@ export default function HomePage() {
       console.log("[BIND] Bind successful");
     } catch (err) {
       console.error("[BIND] Error:", err);
-      setError(err?.message || "Bind failed");
+      const msg = err?.message || "Bind failed";
+      setError(msg);
+      setBindError(msg);
     }
   }
 
@@ -397,6 +403,12 @@ export default function HomePage() {
             {signing ? "Signing..." : "Sign & Bind"}
           </button>
           {boundWallet ? <p className="muted">Bound wallet: {boundWallet}</p> : null}
+          {bindError ? <p className="err">Bind error: {bindError}</p> : null}
+          {bindError && bindError.includes("bindings") ? (
+            <p className="muted">
+              Fix in Supabase SQL Editor: create table if not exists public.bindings (wallet_address text primary key, github_username text unique not null, signature text not null);
+            </p>
+          ) : null}
         </section>
       ) : null}
 

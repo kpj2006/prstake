@@ -65,6 +65,14 @@ export async function POST(request) {
 
     if (error) {
       console.error("[API/BIND] Supabase error:", error);
+      if ((error.message || "").includes("Could not find the table 'public.bindings'")) {
+        return NextResponse.json(
+          {
+            error: "Supabase table 'bindings' is missing. Create table: bindings(wallet_address primary key, github_username unique, signature)."
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

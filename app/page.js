@@ -26,10 +26,10 @@ export default function HomePage() {
 
   const formattedDeposit = useMemo(() => formatUnits(depositRaw, 18), [depositRaw]);
   const isConnected = !!address;
-  const claimDisabled = !isConnected || !isBound || openCount !== 0n || depositRaw === 0n || txPending;
   const isCorrectChain = chainId === 31;
   const githubUsername = session?.user?.githubUsername;
   const isBound = !!(boundWallet && address && boundWallet.toLowerCase() === address.toLowerCase());
+  const claimDisabled = !isConnected || !isBound || openCount !== 0n || depositRaw === 0n || txPending;
 
   async function readOnchain(walletAddress) {
     console.log("[READ_ONCHAIN] Starting for wallet:", walletAddress);

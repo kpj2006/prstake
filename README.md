@@ -53,15 +53,32 @@ Events emitted on every state change:
 - `PRClosed`
 - `DepositClaimed`
 
-## Supabase table
+## Supabase schema
 
-Create one table:
+The app reads and writes rows in `public.bindings`, but it does not run DDL automatically at runtime.
+That is why a missing table causes `/api/check/:github_username` to return `eligible: false` and `wallet: null`.
+
+Use the included migration instead of creating the table manually in the Supabase UI:
+
+- Migration file: `supabase/migrations/202604010001_create_bindings.sql`
+
+Apply it with Supabase CLI:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
+```
+
+If you prefer SQL Editor, you can still run:
 
 ```sql
-create table if not exists bindings (
-  wallet_address text primary key,
-  github_username text unique not null,
-  signature text not null
+create table if not exists public.bindings (
+   wallet_address text primary key,
+   github_username text unique not null,
+   signature text not null,
+   created_at timestamptz not null default now(),
+   updated_at timestamptz not null default now()
 );
 ```
 

@@ -49,7 +49,7 @@ export async function POST(request) {
     console.log("[API/BIND] Comparing wallet:", walletChecksum, "vs recovered:", recoveredChecksum);
     
     if (recoveredChecksum !== walletChecksum) {
-      console.error("[API/BIND] Signature mismatch");
+      console.error("[API/BIND] Signature mismatch - wallet does not match recovered address");
       return NextResponse.json({ error: "Signature does not match wallet" }, { status: 400 });
     }
 
@@ -61,14 +61,14 @@ export async function POST(request) {
     };
 
     const { error } = await supabase.from("bindings").upsert(payload, { onConflict: "wallet_address" });
-    console.log("[API/BIND] Supabase upsert result:", { errorMessage: error?.message });
+    console.log("[API/BIND] Supabase upsert result:", { errorMessage: error?.message, errorCode: error?.code });
 
     if (error) {
-      console.error("[API/BIND] Supabase error:", error);
+      console.error("[API/BIND] Supabase error:", error.message, error.code, error.details);
       if ((error.message || "").includes("Could not find the table 'public.bindings'")) {
         return NextResponse.json(
           {
-            error: "Supabase table 'bindings' is missing. Create table: bindings(wallet_address primary key, github_username unique, signature)."
+            error: "Supabase table 'bindings' is missing. Run: npx supabase db push"
           },
           { status: 400 }
         );

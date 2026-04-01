@@ -252,10 +252,10 @@ export default function HomePage() {
 
       console.log("[BIND] Response status:", res.status);
       const body = await res.json();
-      console.log("[BIND] Response body:", body);
+      console.log("[BIND] Response body:", JSON.stringify(body, null, 2));
       if (!res.ok) {
-        console.error("[BIND] Request failed");
         const msg = body.error || "Failed to bind wallet.";
+        console.error("[BIND] Request failed:", msg);
         setError(msg);
         setBindError(msg);
         return;

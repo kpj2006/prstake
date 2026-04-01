@@ -1,3 +1,5 @@
+contract on explorer: https://explorer.testnet.rootstock.io/address/0x3463253c56c5aa979b6ecb9c3afbad603d51ad84?tab=txs
+
 # PRStake MVP
 
 Minimal MVP for one idea:

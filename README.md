@@ -2,7 +2,7 @@
 
 > A crypto-economic pull request gating system for open-source repositories.
 
-[![Rootstock Testnet](https://img.shields.io/badge/Network-Rootstock%20Testnet-orange)](https://explorer.testnet.rootstock.io/address/0x3463253c56c5aa979b6ecb9c3afbad603d51ad84?tab=txs)
+[![Rootstock Testnet](https://img.shields.io/badge/Network-Rootstock%20Testnet-orange)](https://rootstock-testnet.blockscout.com/address/0x3463253c56C5aa979B6eCB9c3aFBad603D51AD84?tab=index)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-black)](https://nextjs.org)
 [![Solidity](https://img.shields.io/badge/Smart%20Contract-Solidity-363636)](https://soliditylang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -27,7 +27,7 @@ PRStake adds a minimal staking layer to the GitHub contribution workflow. Contri
 |---|---|
 | Architecture | [architecture.md](architecture.md) |
 | Demo | [youtube.com/watch?v=XkVcxlGLISo](https://www.youtube.com/watch?v=XkVcxlGLISo) |
-| Contract Explorer | [Rootstock Testnet](https://explorer.testnet.rootstock.io/address/0x3463253c56c5aa979b6ecb9c3afbad603d51ad84?tab=txs) |
+| Contract Explorer | [Rootstock Testnet](https://rootstock-testnet.blockscout.com/address/0x3463253c56C5aa979B6eCB9c3aFBad603D51AD84?tab=index) |
 
 ---
 
